@@ -47,7 +47,7 @@ def get_post(post_id: int) -> sqlite3.Row:
     :param post_id: ID of the post to get
     :return: SQLite row of a post
     """
-    with (db.get_db_connection() as conn):
+    with db.get_db_connection() as conn:
         sql_query = 'SELECT * FROM posts WHERE id = ?'
         post = db.execute(conn, sql_query, (post_id, )).fetchone()
         return post
@@ -90,7 +90,7 @@ def post(post_id):
         app.logger.info(f"Non existing article accessed with ID: {post_id}")
         return render_template('404.html'), HTTPStatus.NOT_FOUND
     else:
-        app.logger.info(f'Article "{post['title']}" retrieved!')
+        app.logger.info(f'Article "{post["title"]}" retrieved!')
         return render_template('post.html', post=post)
 
 
