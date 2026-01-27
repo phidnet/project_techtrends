@@ -1,3 +1,4 @@
+import logging
 from http import HTTPStatus
 from contextlib import contextmanager
 
@@ -63,10 +64,13 @@ def get_post_count() -> int:
         return post_count
 
 
-db = DatabaseWrapper()
 # Define the Flask application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your secret key'
+# Set up logging to a file
+formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+app.logger.setLevel(logging.DEBUG)
+db = DatabaseWrapper()
 
 
 # Define the main route of the web application 
@@ -83,14 +87,17 @@ def index():
 def post(post_id):
     post = get_post(post_id)
     if post is None:
-      return render_template('404.html'), HTTPStatus.NOT_FOUND
+        app.logger.info(f"Non existing article accessed with ID: {post_id}")
+        return render_template('404.html'), HTTPStatus.NOT_FOUND
     else:
-      return render_template('post.html', post=post)
+        app.logger.info(f'Article "{post['title']}" retrieved!')
+        return render_template('post.html', post=post)
 
 
 # Define the About Us page
 @app.route('/about')
 def about():
+    app.logger.info('About Us retrieved!')
     return render_template('about.html')
 
 
@@ -109,6 +116,7 @@ def create():
                              (title, content))
                 db.db_connection_count += 1
                 conn.commit()
+                app.logger.info(f'New article "{title}" created!')
                 return redirect(url_for('index'))
 
     return render_template('create.html')
