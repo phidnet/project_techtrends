@@ -130,7 +130,7 @@ def healthz():
         with db.get_db_connection() as conn:
             db.execute(conn, 'SELECT 1 FROM posts LIMIT 1')
             return app.response_class(
-                response={'result': 'OK - healthy'},
+                response=json.dumps({'result': 'OK - healthy'}),
                 status=HTTPStatus.OK,
                 mimetype='application/json'
             )
