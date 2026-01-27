@@ -114,7 +114,6 @@ def create():
             with db.get_db_connection() as conn:
                 db.execute(conn, 'INSERT INTO posts (title, content) VALUES (?, ?)',
                              (title, content))
-                db.db_connection_count += 1
                 conn.commit()
                 app.logger.info(f'New article "{title}" created!')
                 return redirect(url_for('index'))
@@ -127,12 +126,23 @@ def healthz():
     Check health of the application
     :return: Health of the application
     """
-    response = app.response_class(
-        response=json.dumps({'result': 'OK - healthy'}),
-        status=HTTPStatus.OK,
-        mimetype='application/json'
-    )
-    return response
+    try:
+        with db.get_db_connection() as conn:
+            db.execute(conn, 'SELECT 1 FROM posts LIMIT 1')
+            return app.response_class(
+                response={'result': 'OK - healthy'},
+                status=HTTPStatus.OK,
+                mimetype='application/json'
+            )
+    except sqlite3.OperationalError as err:
+        # No post table is fatal as the entirety of the application depends on it and can't be ignored
+        # Log error as fatal and return unhealthy response
+        app.logger.fatal(str(err))
+        return app.response_class(
+            response=json.dumps({'result': 'ERROR - unhealthy'}),
+            status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            mimetype='application/json'
+        )
 
 @app.route('/metrics')
 def metrics_endpoint():
