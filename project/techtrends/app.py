@@ -1,3 +1,4 @@
+import sys
 import logging
 from http import HTTPStatus
 from contextlib import contextmanager
@@ -67,9 +68,14 @@ def get_post_count() -> int:
 # Define the Flask application
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your secret key'
-# Set up logging to a file
-formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
-app.logger.setLevel(logging.DEBUG)
+
+# Set up logging for STDOUT and STDERR
+log_format = '%(asctime)s %(levelname)s: %(message)s'
+loghandler_stdout = logging.StreamHandler(sys.stdout)
+loghandler_stderr = logging.StreamHandler(sys.stderr)
+logging.basicConfig(format=log_format, level=logging.DEBUG, handlers=[loghandler_stdout, loghandler_stderr])
+
+# Init database wrapper
 db = DatabaseWrapper()
 
 
@@ -87,7 +93,7 @@ def index():
 def post(post_id):
     post = get_post(post_id)
     if post is None:
-        app.logger.info(f"Non existing article accessed with ID: {post_id}")
+        app.logger.error(f"Non existing article accessed with ID: {post_id}")
         return render_template('404.html'), HTTPStatus.NOT_FOUND
     else:
         app.logger.info(f'Article "{post["title"]}" retrieved!')
